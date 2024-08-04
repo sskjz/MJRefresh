@@ -15,6 +15,8 @@
 @interface MJRefreshBackFooter()
 @property (assign, nonatomic) NSInteger lastRefreshCount;
 @property (assign, nonatomic) CGFloat lastBottomDelta;
+/** 记录pageenable */
+@property (nonatomic, assign) BOOL isPageEnabled;
 @end
 
 @implementation MJRefreshBackFooter
@@ -34,6 +36,7 @@
     
     // 如果正在刷新，直接返回
     if (self.state == MJRefreshStateRefreshing) return;
+    self.isPageEnabled = self.scrollView.pagingEnabled;
     
     _scrollViewOriginalInset = self.scrollView.mj_inset;
     
@@ -111,6 +114,8 @@
                 if (self.endRefreshingCompletionBlock) {
                     self.endRefreshingCompletionBlock();
                 }
+                
+                self.scrollView.pagingEnabled = self.isPageEnabled;
             }];
         }
         
@@ -123,6 +128,8 @@
         // 记录刷新前的数量
         self.lastRefreshCount = self.scrollView.mj_totalDataCount;
         
+        BOOL pageEnabled = self.scrollView.pagingEnabled;
+        self.scrollView.pagingEnabled = NO;
         [UIView animateWithDuration:self.fastAnimationDuration animations:^{
             CGFloat bottom = self.mj_h + self.scrollViewOriginalInset.bottom;
             CGFloat deltaH = [self heightForContentBreakView];
