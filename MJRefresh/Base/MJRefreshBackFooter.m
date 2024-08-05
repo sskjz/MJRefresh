@@ -15,8 +15,6 @@
 @interface MJRefreshBackFooter()
 @property (assign, nonatomic) NSInteger lastRefreshCount;
 @property (assign, nonatomic) CGFloat lastBottomDelta;
-/** 记录pageenable */
-@property (nonatomic, assign) BOOL isPageEnabled;
 @end
 
 @implementation MJRefreshBackFooter
@@ -36,7 +34,6 @@
     
     // 如果正在刷新，直接返回
     if (self.state == MJRefreshStateRefreshing) return;
-    self.isPageEnabled = self.scrollView.pagingEnabled;
     
     _scrollViewOriginalInset = self.scrollView.mj_inset;
     
@@ -100,15 +97,7 @@
     if (state == MJRefreshStateNoMoreData || state == MJRefreshStateIdle) {
         // 刷新完毕
         if (MJRefreshStateRefreshing == oldState) {
-            [UIView animateWithDuration:self.slowAnimationDuration animations:^{
-                if (self.endRefreshingAnimationBeginAction) {
-                    self.endRefreshingAnimationBeginAction();
-                }
-                
-                self.scrollView.mj_insetB -= self.lastBottomDelta;
-                // 自动调整透明度
-                if (self.isAutomaticallyChangeAlpha) self.alpha = 0.0;
-            } completion:^(BOOL finished) {
+            void (^endBlock) (BOOL finish) = ^(BOOL finished) {
                 self.pullingPercent = 0.0;
                 
                 if (self.endRefreshingCompletionBlock) {
@@ -116,7 +105,29 @@
                 }
                 
                 self.scrollView.pagingEnabled = self.isPageEnabled;
-            }];
+            };
+            
+            if (self.isPageEnabled) {
+                
+                self.scrollView.pagingEnabled = NO;
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    self.scrollView.mj_insetB -= self.lastBottomDelta;
+                    endBlock(YES);
+                });
+                
+            } else {
+                
+                [UIView animateWithDuration:self.slowAnimationDuration animations:^{
+                    if (self.endRefreshingAnimationBeginAction) {
+                        self.endRefreshingAnimationBeginAction();
+                    }
+                    
+                    self.scrollView.mj_insetB -= self.lastBottomDelta;
+                    // 自动调整透明度
+                    if (self.isAutomaticallyChangeAlpha) self.alpha = 0.0;
+                } completion:endBlock];
+            }
+            
         }
         
         CGFloat deltaH = [self heightForContentBreakView];
@@ -128,7 +139,6 @@
         // 记录刷新前的数量
         self.lastRefreshCount = self.scrollView.mj_totalDataCount;
         
-        BOOL pageEnabled = self.scrollView.pagingEnabled;
         self.scrollView.pagingEnabled = NO;
         [UIView animateWithDuration:self.fastAnimationDuration animations:^{
             CGFloat bottom = self.mj_h + self.scrollViewOriginalInset.bottom;
@@ -140,6 +150,7 @@
             self.scrollView.mj_insetB = bottom;
             self.scrollView.mj_offsetY = [self happenOffsetY] + self.mj_h;
         } completion:^(BOOL finished) {
+            self.scrollView.pagingEnabled = YES;
             [self executeRefreshingCallback];
         }];
     }

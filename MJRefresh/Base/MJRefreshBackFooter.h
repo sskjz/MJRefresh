@@ -16,6 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface MJRefreshBackFooter : MJRefreshFooter
 
+/** 记录pageenable */
+@property (nonatomic, assign) BOOL isPageEnabled;
+
 @end
 
 NS_ASSUME_NONNULL_END
