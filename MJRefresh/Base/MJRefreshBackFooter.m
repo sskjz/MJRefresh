@@ -104,7 +104,9 @@
                     self.endRefreshingCompletionBlock();
                 }
                 
-                self.scrollView.pagingEnabled = self.isPageEnabled;
+                if (self.isPageEnabled) {
+                    self.scrollView.pagingEnabled = self.isPageEnabled;
+                }
             };
             
             if (self.isPageEnabled) {
@@ -139,7 +141,9 @@
         // 记录刷新前的数量
         self.lastRefreshCount = self.scrollView.mj_totalDataCount;
         
-        self.scrollView.pagingEnabled = NO;
+        if (self.isPageEnabled) {
+            self.scrollView.pagingEnabled = NO;
+        }
         [UIView animateWithDuration:self.fastAnimationDuration animations:^{
             CGFloat bottom = self.mj_h + self.scrollViewOriginalInset.bottom;
             CGFloat deltaH = [self heightForContentBreakView];
@@ -150,7 +154,9 @@
             self.scrollView.mj_insetB = bottom;
             self.scrollView.mj_offsetY = [self happenOffsetY] + self.mj_h;
         } completion:^(BOOL finished) {
-            self.scrollView.pagingEnabled = YES;
+            if (self.isPageEnabled) {
+                self.scrollView.pagingEnabled = YES;
+            }
             [self executeRefreshingCallback];
         }];
     }
